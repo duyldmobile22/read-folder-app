@@ -136,7 +136,7 @@ img {
 .v-vlite .v-controlBar.hidden, .v-vlite .v-topBar.hidden {
   opacity: 0;
 }
-.nocursor:fullscreen { 
+.v-playing.nocursor:fullscreen { 
   cursor: none; 
   transition: .25s ease-in;
 }
