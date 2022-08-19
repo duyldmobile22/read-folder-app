@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React from "react";
 import { useEffect, useState, useRef } from "react";
 import fileIcon from "./file.png";
@@ -68,6 +69,7 @@ const Home = () => {
   const [fileName, setFileName] = useState("");
   const [nextFile, setNextFile] = useState("");
   const [previousFile, setPreviousFile] = useState("");
+  const [focus, setFocus] = useState(0);
   const [state, setState] = useState({
     url: null,
     pip: false,
@@ -98,7 +100,7 @@ const Home = () => {
     } else {
       screenfull.exit();
     }
-    setStateElm({ isFullSreen: isFullSreen });
+    setStateElm({ isFullSreen });
   };
 
   const handleSeekMouseDown = () => {
@@ -132,7 +134,6 @@ const Home = () => {
         .then((response) => response.json())
         .then((data) => setFilesOfParent(data.filter((d) => d.type === "file")));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rootPath]);
 
   useEffect(() => {
@@ -140,8 +141,13 @@ const Home = () => {
     setFileName((filesOfParent[index] || {}).name);
     setNextFile((filesOfParent[index + 1] || {}).name);
     setPreviousFile((filesOfParent[index - 1] || {}).name);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filesOfParent]);
+
+  useEffect(() => {
+    if (sample_video) {
+      handleFullSreen(true);
+    }
+  }, [sample_video]);
 
   return (
     <div className="App">
@@ -169,7 +175,7 @@ const Home = () => {
             folders.map((folder, index) => {
               const fullPath = _.filter([root, pathName, folder.name], (elm) => !!elm).join("/");
               return (
-                <div className="App-item" key={index}>
+                <div className={`App-item`} key={index}>
                   <img src={folder.type === "file" ? fileIcon : folderIcon} alt="icon" />
                   <Link to={`/${fullPath}${folder.type === "file" ? "?type=file" : ""}`}>{folder.name}</Link>
                 </div>
@@ -182,7 +188,6 @@ const Home = () => {
                   id="sample_video"
                   className={`v-vlite ${state.playing ? "v-playing" : "v-paused"}`}
                   onMouseMove={() => handleAutoHide()}
-                  // onClick={() => handleAutoHide()}
                 >
                   <ReactPlayer
                     ref={playerRef}
@@ -191,7 +196,6 @@ const Home = () => {
                     url={publicURL + pathViewFile}
                     pip={state.pip}
                     playing={state.playing}
-                    // controls={state.controls}
                     light={state.light}
                     loop={state.loop}
                     playbackRate={state.playbackRate}
@@ -210,14 +214,14 @@ const Home = () => {
                     }}
                   />
                   <div className={`v-topBar ${state.hide ? "hidden" : ""}`}>
-                    <span className='v-topTitle'>{fileName}</span>
+                    <span className="v-topTitle">{fileName}</span>
                   </div>
                   <div
                     className="v-overlayVideo"
                     onClick={() => setStateElm({ playing: !state.playing })}
                     onDoubleClick={() => handleFullSreen(!state.isFullSreen)}
                   ></div>
-                  <button class="v-bigPlay v-controlButton" aria-label="Play" onClick={() => setStateElm({ playing: !state.playing })}>
+                  <button className="v-bigPlay v-controlButton" aria-label="Play" onClick={() => setStateElm({ playing: !state.playing })}>
                     <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0ZM7.5 12.67V7.33c0-.79.88-1.27 1.54-.84l4.15 2.67a1 1 0 0 1 0 1.68l-4.15 2.67c-.66.43-1.54-.05-1.54-.84Z"></path>
                     </svg>
@@ -278,7 +282,6 @@ const Home = () => {
                       <div
                         className={`v-subtitle ${state.boxTracks ? "v-active" : ""}`}
                         onClick={() => setStateElm({ boxTracks: !state.boxTracks })}
-                        onAuxClick={() => setStateElm({ boxTracks: false })}
                       >
                         <span className="v-subIcon">
                           <svg viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
