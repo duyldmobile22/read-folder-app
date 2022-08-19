@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React from "react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import fileIcon from "./file.png";
 import folderIcon from "./folder.png";
 import startingGif from "./starting.png";
@@ -29,47 +29,18 @@ const Home = () => {
   const type = queryParams.get("type");
   const publicURL = `http://${hostname}:8081/public/`;
   const subtitlesURL = `http://${hostname}:8081/subtitles/`;
+  const trasksURL = `http://${hostname}:8081/trasks/`;
   var sample_video = document.getElementById("sample_video");
-  // var video = document.getElementsByTagName("video")[0];
-  // const textTracks = _.get(video, "textTracks", null);
-  //   const cues = _.get(video, "textTracks[0].cues", null);
-  //   const activeCues = _.get(video, "textTracks[0].activeCues", null);
+  var video = document.getElementsByTagName("video")[0];
+  const textTracks = _.get(video, "textTracks", null);
 
-  // if (textTracks && textTracks.length > 0) {
-  //   let isHidden = true;
-  //   let textTrack;
-  //   for (let i = 0; i < textTracks.length; i++) {
-  //     if (textTracks[i].language == "default") textTrack = textTracks[i];
-  //     if (textTracks[i].mode == "showing") isHidden = false;
-  //   }
-  //   if(!isHidden) {
-  //       textTrack.mode = 'showing';
-  //   }
-  // }
-
-  const handleActionFile = (fileName, path) => {
-    if (fileName) history.push(`/${[path, fileName].join("/")}?type=file`);
-  };
-
-  const borderText = (px, color) => {
-    const list = [0];
-    for (let i = 1; i <= px; i++) {
-      list.push(...[i, -i]);
-    }
-    const css = [];
-    for (let i = 0; i < list.length; i++) {
-      for (let j = 0; j < list.length; j++) {
-        css.push(`${list[i]}px ${list[j]}px ${color}`);
-      }
-    }
-    return css.join(",");
-  };
   const [folders, setFolders] = useState([]);
   const [filesOfParent, setFilesOfParent] = useState([]);
+  const [subtitles, setSubtitles] = useState(null);
   const [fileName, setFileName] = useState("");
   const [nextFile, setNextFile] = useState("");
   const [previousFile, setPreviousFile] = useState("");
-  const [focus, setFocus] = useState(0);
+  // const [focus, setFocus] = useState(0);
   const [state, setState] = useState({
     url: null,
     pip: false,
@@ -89,11 +60,42 @@ const Home = () => {
     hide: false
   });
 
+  const changeSubtitle = (language) => {
+    if (textTracks && textTracks.length > 0) {
+      for (let i = 0; i < textTracks.length; i++) {
+        textTracks[i].mode = textTracks[i].language === language ? "showing" : "hidden";
+      }
+    }
+    const newSybtitle = _.clone(subtitles);
+    newSybtitle.forEach((sub) => {
+      sub.default = sub.language === language;
+    });
+    setSubtitles(newSybtitle);
+  };
+  const handleActionFile = (fileName, path) => {
+    if (fileName) history.push(`/${[path, fileName].join("/")}?type=file`);
+  };
+
+  const borderText = (px, color) => {
+    const list = [0];
+    for (let i = 1; i <= px; i++) {
+      list.push(...[i, -i]);
+    }
+    const css = [];
+    for (let i = 0; i < list.length; i++) {
+      for (let j = 0; j < list.length; j++) {
+        css.push(`${list[i]}px ${list[j]}px ${color}`);
+      }
+    }
+    return css.join(",");
+  };
+
   const setStateElm = (value) => {
     const newStage = _.cloneDeep(state);
     _.assign(newStage, value);
     setState(newStage);
   };
+
   const handleFullSreen = (isFullSreen) => {
     if (isFullSreen) {
       screenfull.request(sample_video);
@@ -124,7 +126,7 @@ const Home = () => {
     }, 3000);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (type !== "file") {
       fetch(publicURL + fullPathRoot.join("/"))
         .then((response) => response.json())
@@ -133,6 +135,9 @@ const Home = () => {
       fetch(publicURL + backRootPath)
         .then((response) => response.json())
         .then((data) => setFilesOfParent(data.filter((d) => d.type === "file")));
+      fetch(trasksURL + pathViewFile)
+        .then((response) => response.json())
+        .then((data) => setSubtitles(data));
     }
   }, [rootPath]);
 
@@ -142,12 +147,6 @@ const Home = () => {
     setNextFile((filesOfParent[index + 1] || {}).name);
     setPreviousFile((filesOfParent[index - 1] || {}).name);
   }, [filesOfParent]);
-
-  useEffect(() => {
-    if (sample_video) {
-      handleFullSreen(true);
-    }
-  }, [sample_video]);
 
   return (
     <div className="App">
@@ -184,35 +183,40 @@ const Home = () => {
           ) : (
             <>
               <div className="player-wrapper" id="sample_video">
-                <div
-                  id="sample_video"
-                  className={`v-vlite ${state.playing ? "v-playing" : "v-paused"}`}
-                  onMouseMove={() => handleAutoHide()}
-                >
-                  <ReactPlayer
-                    ref={playerRef}
-                    className="react-player vlite-js"
-                    style={{ "--shadow": borderText(4, "#000") }}
-                    url={publicURL + pathViewFile}
-                    pip={state.pip}
-                    playing={state.playing}
-                    light={state.light}
-                    loop={state.loop}
-                    playbackRate={state.playbackRate}
-                    volume={state.volume}
-                    muted={state.muted}
-                    onDuration={(duration) => setStateElm({ duration: duration })}
-                    onEnded={() => handleActionFile(nextFile, backRootPath)}
-                    onProgress={(stage) => setStateElm({ played: stage.played })}
-                    config={{
-                      attributes: {
-                        crossOrigin: "anonymous"
-                      },
-                      file: {
-                        tracks: [{ kind: "subtitles", src: subtitlesURL + pathViewFile, srcLang: "default", default: true, line: 0 }]
-                      }
-                    }}
-                  />
+                <div id="sample_video" className={`v-vlite ${state.playing ? "v-playing" : "v-paused"}`} onMouseMove={() => handleAutoHide()}>
+                  {!!subtitles && (
+                    <ReactPlayer
+                      ref={playerRef}
+                      className="react-player vlite-js"
+                      style={{ "--shadow": borderText(4, "#000") }}
+                      // controls
+                      url={publicURL + pathViewFile}
+                      pip={state.pip}
+                      playing={state.playing}
+                      light={state.light}
+                      loop={state.loop}
+                      playbackRate={state.playbackRate}
+                      volume={state.volume}
+                      muted={state.muted}
+                      onDuration={(duration) => setStateElm({ duration: duration })}
+                      onEnded={() => handleActionFile(nextFile, backRootPath)}
+                      onProgress={(stage) => setStateElm({ played: stage.played })}
+                      config={{
+                        attributes: {
+                          crossOrigin: "anonymous"
+                        },
+                        file: {
+                          tracks: subtitles.map((sub, index) => ({
+                            kind: "subtitles",
+                            src: subtitlesURL + pathViewFile + `?language=${sub.language}`,
+                            srcLang: sub.language,
+                            default: true
+                          }))
+                        }
+                      }}
+                    />
+                  )}
+
                   <div className={`v-topBar ${state.hide ? "hidden" : ""}`}>
                     <span className="v-topTitle">{fileName}</span>
                   </div>
@@ -279,10 +283,7 @@ const Home = () => {
                           <Duration seconds={state.duration}></Duration>
                         </span>
                       </div>
-                      <div
-                        className={`v-subtitle ${state.boxTracks ? "v-active" : ""}`}
-                        onClick={() => setStateElm({ boxTracks: !state.boxTracks })}
-                      >
+                      <div className={`v-subtitle ${state.boxTracks ? "v-active" : ""}`} onClick={() => setStateElm({ boxTracks: !state.boxTracks })}>
                         <span className="v-subIcon">
                           <svg viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
                             <path d="M18 0H2C.9 0 0 .9 0 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2ZM2 8h4v2H2V8Zm10 6H2v-2h10v2Zm6 0h-4v-2h4v2Zm0-4H8V8h10v2Z"></path>
@@ -290,30 +291,27 @@ const Home = () => {
                         </span>
                         <div className={`v-subtitlesList ${state.boxTracks ? "v-active" : ""}`}>
                           <ul>
-                            <li>
-                              <button className="v-trackButton" data-language="off">
+                            <li onClick={() => changeSubtitle(null)}>
+                              <button className={`v-trackButton ${!subtitles.find((s) => !!s.default) ? "v-active" : ""}`} data-language="off">
                                 <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
                                 </svg>
                                 Off
                               </button>
                             </li>
-                            <li>
-                              <button className="v-trackButton v-active" data-language="en">
-                                <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
-                                </svg>
-                                English
-                              </button>
-                            </li>{" "}
-                            <li>
-                              <button className="v-trackButton" data-language="fr">
-                                <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
-                                </svg>
-                                French
-                              </button>
-                            </li>
+                            {subtitles &&
+                              subtitles.map((sub) => {
+                                return (
+                                  <li onClick={() => changeSubtitle(sub.language)}>
+                                    <button className={`v-trackButton ${sub.default ? "v-active" : ""}`} data-language="off">
+                                      <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
+                                      </svg>
+                                      {sub.language}
+                                    </button>
+                                  </li>
+                                );
+                              })}
                           </ul>
                         </div>
                       </div>
