@@ -127,6 +127,7 @@ const Home = () => {
   };
 
   useLayoutEffect(() => {
+    setSubtitles(null)
     if (type !== "file") {
       fetch(publicURL + fullPathRoot.join("/"))
         .then((response) => response.json())
@@ -292,7 +293,7 @@ const Home = () => {
                         <div className={`v-subtitlesList ${state.boxTracks ? "v-active" : ""}`}>
                           <ul>
                             <li onClick={() => changeSubtitle(null)}>
-                              <button className={`v-trackButton ${!subtitles.find((s) => !!s.default) ? "v-active" : ""}`} data-language="off">
+                              <button className={`v-trackButton ${!subtitles || !subtitles.find((s) => !!s.default) ? "v-active" : ""}`} data-language="off">
                                 <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
                                 </svg>
@@ -300,9 +301,9 @@ const Home = () => {
                               </button>
                             </li>
                             {subtitles &&
-                              subtitles.map((sub) => {
+                              subtitles.map((sub, index) => {
                                 return (
-                                  <li onClick={() => changeSubtitle(sub.language)}>
+                                  <li onClick={() => changeSubtitle(sub.language)} key={index}>
                                     <button className={`v-trackButton ${sub.default ? "v-active" : ""}`} data-language="off">
                                       <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
