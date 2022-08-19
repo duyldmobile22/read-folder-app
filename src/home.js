@@ -1,6 +1,4 @@
 import React from "react";
-// importing Link from react-router-dom to navigate to
-// different end points
 import { useEffect, useState, useRef } from "react";
 import fileIcon from "./file.png";
 import folderIcon from "./folder.png";
@@ -179,18 +177,6 @@ const Home = () => {
             })
           ) : (
             <>
-              <div className="app-title">{fileName}</div>
-              {/* <button
-                className="button-next-video"
-                style={{ marginLeft: "0px" }}
-                disabled={previousFile ? "" : "disabled"}
-                onClick={() => handleActionFile(, backRootPath)}
-              >
-                Previous
-              </button>
-              <button className="button-next-video" disabled={nextFile ? "" : "disabled"} onClick={() => handleActionFile(nextFile, backRootPath)}>
-                Next
-              </button> */}
               <div className="player-wrapper" id="sample_video">
                 <div
                   id="sample_video"
@@ -211,14 +197,6 @@ const Home = () => {
                     playbackRate={state.playbackRate}
                     volume={state.volume}
                     muted={state.muted}
-                    // onStart={() => console.log("onStart")}
-                    // onPlay={() => console.log("onPlay")}
-                    // onReady={() => console.log("onReady")}
-                    // onBuffer={(event) => console.log("onBuffer", event)}
-                    // onBufferEnd={() => console.log("onBufferEnd")}
-                    // onPlaybackRateChange={() => console.log("onPlaybackRateChange")}
-                    // onClickPreview={() => console.log("onClickPreview")}
-                    // onSeek={(seconds) => setCurrentSeconds(seconds)}
                     onDuration={(duration) => setStateElm({ duration: duration })}
                     onEnded={() => handleActionFile(nextFile, backRootPath)}
                     onProgress={(stage) => setStateElm({ played: stage.played })}
@@ -231,11 +209,19 @@ const Home = () => {
                       }
                     }}
                   />
+                  <div className={`v-topBar ${state.hide ? "hidden" : ""}`}>
+                    <span className='v-topTitle'>{fileName}</span>
+                  </div>
                   <div
                     className="v-overlayVideo"
                     onClick={() => setStateElm({ playing: !state.playing })}
                     onDoubleClick={() => handleFullSreen(!state.isFullSreen)}
                   ></div>
+                  <button class="v-bigPlay v-controlButton" aria-label="Play" onClick={() => setStateElm({ playing: !state.playing })}>
+                    <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0ZM7.5 12.67V7.33c0-.79.88-1.27 1.54-.84l4.15 2.67a1 1 0 0 1 0 1.68l-4.15 2.67c-.66.43-1.54-.05-1.54-.84Z"></path>
+                    </svg>
+                  </button>
                   <div className={`v-controlBar ${state.hide ? "hidden" : ""}`}>
                     <div className="v-progressBar">
                       <div className="v-progressSeek" style={{ width: `${(state.seeking ? state.seekingLine : state.played) * 100}%` }}></div>
