@@ -8,7 +8,7 @@ import "./App.css";
 import ReactPlayer from "react-player";
 import _ from "lodash";
 import Duration from "./Duration";
-import screenfull from "screenfull";
+// import screenfull from "screenfull";
 import { Link, useHistory } from "react-router-dom";
 
 const Home = () => {
@@ -98,9 +98,9 @@ const Home = () => {
 
   const handleFullSreen = (isFullSreen) => {
     if (isFullSreen) {
-      screenfull.request(sample_video);
+      sample_video.requestFullscreen();
     } else {
-      screenfull.exit();
+      document.exitFullscreen();
     }
     setStateElm({ isFullSreen });
   };
@@ -122,12 +122,12 @@ const Home = () => {
     setStateElm({ hide: false });
     clearTimeout(currentRef.current);
     currentRef.current = setTimeout(() => {
-      setStateElm({ hide: true });
+      setStateElm({ hide: true, boxTracks: false });
     }, 3000);
   };
 
   useLayoutEffect(() => {
-    setSubtitles(null)
+    setSubtitles(null);
     if (type !== "file") {
       fetch(publicURL + fullPathRoot.join("/"))
         .then((response) => response.json())
@@ -183,8 +183,12 @@ const Home = () => {
             })
           ) : (
             <>
-              <div className="player-wrapper" id="sample_video">
-                <div id="sample_video" className={`v-vlite ${state.playing ? "v-playing" : "v-paused"}`} onMouseMove={() => handleAutoHide()}>
+              <div className="player-wrapper">
+                <div
+                  id="sample_video"
+                  className={`v-vlite ${state.playing ? "v-playing" : "v-paused"} ${state.hide ? "nocursor" : ""}`}
+                  onMouseMove={() => handleAutoHide()}
+                >
                   {!!subtitles && (
                     <ReactPlayer
                       ref={playerRef}
@@ -293,7 +297,10 @@ const Home = () => {
                         <div className={`v-subtitlesList ${state.boxTracks ? "v-active" : ""}`}>
                           <ul>
                             <li onClick={() => changeSubtitle(null)}>
-                              <button className={`v-trackButton ${!subtitles || !subtitles.find((s) => !!s.default) ? "v-active" : ""}`} data-language="off">
+                              <button
+                                className={`v-trackButton ${!subtitles || !subtitles.find((s) => !!s.default) ? "v-active" : ""}`}
+                                data-language="off"
+                              >
                                 <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
                                 </svg>
@@ -308,7 +315,7 @@ const Home = () => {
                                       <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
                                       </svg>
-                                      {sub.language}
+                                      {sub.lable}
                                     </button>
                                   </li>
                                 );

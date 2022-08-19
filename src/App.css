@@ -5,7 +5,8 @@
 .react-player video::cue{
   text-shadow: var(--shadow);
   background: none;
-  font-size: 40px;
+  font-size: 60px;
+  font-weight: 700;
  }
  
 .App-logo {
@@ -134,6 +135,10 @@ img {
 }
 .v-vlite .v-controlBar.hidden, .v-vlite .v-topBar.hidden {
   opacity: 0;
+}
+.nocursor:fullscreen { 
+  cursor: none; 
+  transition: .25s ease-in;
 }
 .v-vlite .v-controlBar {
   position: absolute;
