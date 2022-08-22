@@ -5,9 +5,8 @@
 .react-player video::cue{
   /* text-shadow: var(--shadow); */
   /* background: none; */
-  font-size: 60px;
+  font-size: var(--font-size-subtitle);
   font-weight: 700;
-  padding: 5px 2px;
  }
  
 .App-logo {
@@ -381,6 +380,7 @@ img {
 }
 .v-subtitlesList li {
   list-style-type: none;
+  text-align: left;
 }
 .v-trackButton {
   color: black;
@@ -396,7 +396,7 @@ img {
   position: relative;
   text-align: left;
   transition: background-color 0.25s ease;
-  width: 100%;
+  width: max-content;
 }
 .v-trackButton.v-active svg {
   display: block;

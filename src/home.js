@@ -47,8 +47,8 @@ const Home = () => {
     playbackRate: 1.0,
     loop: false,
     isFullSreen: false,
-    mouseMove: new Date().getTime(),
-  }
+    mouseMove: new Date().getTime()
+  };
 
   const [folders, setFolders] = useState([]);
   const [filesOfParent, setFilesOfParent] = useState([]);
@@ -60,8 +60,8 @@ const Home = () => {
   const [boxTracks, setBoxTracks] = useState(false);
   const [state, setState] = useState(stateInit);
 
-  if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles))  {
-    const subtitle = subtitles.find(s => s.default)
+  if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles)) {
+    const subtitle = subtitles.find((s) => s.default);
     for (let i = 0; i < textTracks.length; i++) {
       textTracks[i].mode = textTracks[i].language === subtitle?.language ? "showing" : "hidden";
     }
@@ -77,29 +77,16 @@ const Home = () => {
     newSybtitle.forEach((sub) => {
       sub.default = sub.language === language;
     });
-    if(!noSetSub) setSubtitles(newSybtitle);
+    if (!noSetSub) setSubtitles(newSybtitle);
   };
   const handleActionFile = (fileName, path) => {
     if (fileName) history.push(`/${[path, fileName].join("/")}?type=file`);
   };
 
-  const borderText = (px, color) => {
-    const list = [0];
-    for (let i = 1; i <= px; i++) {
-      list.push(...[i, -i]);
-    }
-    const css = [];
-    for (let i = 0; i < list.length; i++) {
-      for (let j = 0; j < list.length; j++) {
-        css.push(`${list[i]}px ${list[j]}px ${color}`);
-      }
-    }
-    return css.join(",");
-  };
-
   const sizeBar = {
     "--width-bar": sample_video && sample_video.offsetHeight >= 1080 ? "100px" : "50px",
-    "--font-size": sample_video && sample_video.offsetHeight >= 1080 ? "24px" : "12px"
+    "--font-size": sample_video && sample_video.offsetHeight >= 1080 ? "24px" : "12px",
+    "--font-size-subtitle": sample_video ? sample_video.offsetHeight / 18 + "px" : "24px"
   };
 
   const setStateElm = (value) => {
@@ -139,20 +126,33 @@ const Home = () => {
     }, 3000);
   };
 
+  const getSubtitles = () => {
+    fetch(trasksURL + pathViewFile)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data)
+        if (_.isArray(data)) {
+          setSubtitles(data);
+        } else {
+          setTimeout(() => {
+            getSubtitles();
+          }, 2000);
+        }
+      });
+  };
+
   useLayoutEffect(() => {
     setSubtitles(null);
-    setStateElm({played: 0})
+    setStateElm({ played: 0 });
     if (type !== "file") {
       fetch(publicURL + fullPathRoot.join("/"))
         .then((response) => response.json())
         .then((data) => setFolders(data));
     } else {
+      getSubtitles();
       fetch(publicURL + backRootPath)
         .then((response) => response.json())
         .then((data) => setFilesOfParent(data.filter((d) => d.type === "file")));
-      fetch(trasksURL + pathViewFile)
-        .then((response) => response.json())
-        .then((data) => setSubtitles(data));
     }
   }, [rootPath]);
 
