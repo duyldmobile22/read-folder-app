@@ -3,10 +3,11 @@
 }
 
 .react-player video::cue{
-  text-shadow: var(--shadow);
-  background: none;
+  /* text-shadow: var(--shadow); */
+  /* background: none; */
   font-size: 60px;
   font-weight: 700;
+  padding: 5px 2px;
  }
  
 .App-logo {
@@ -145,7 +146,7 @@ img {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 50px;
+  height: var(--width-bar);
   padding-top: 3px;
   text-align: right;
   padding-left: 10px;
@@ -175,8 +176,8 @@ img {
   top: 0;
   left: 10px;
   right: 10px;
-  height: 3px;
-  background-color: rgba(0,0,0,.2);
+  height: 8px;
+  background-color: rgba(255,255,255,.2);
   transition: height .1s ease-out,top .1s ease-out;
   z-index: 1;
 }
@@ -211,39 +212,69 @@ img {
 .v-vlite .v-playPauseButton {
     position: relative;
     float: left;
-    width: 40px;
+    width: var(--width-bar);
     height: 100%;
     cursor: pointer;
 }
 .v-vlite .v-playPauseButton .v-nextIcon {
-  position: absolute;
+  width: 100%;
+  height: 100%;
+  /* position: absolute;
   top: 45%;
   left: 29%;
   -webkit-transform: translateX(-50%) translateY(-50%);
-  transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%); */
+}
+.v-vlite .v-playPauseButton .v-nextIcon svg {
+  width: 100%;
+  height: 100%;
 }
 .v-vlite .v-playPauseButton .v-previousIcon {
-  position: absolute;
+  width: 100%;
+  height: 100%;
+  /* position: absolute;
   top: 46%;
   left: 57%;
   -webkit-transform: translateX(-50%) translateY(-50%);
-  transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%); */
+}
+.v-vlite .v-playPauseButton .v-previousIcon svg {
+  width: 100%;
+  height: 100%;
+  /* position: absolute;
+  top: 46%;
+  left: 57%;
+  -webkit-transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%); */
 }
 .v-vlite .v-playPauseButton .v-playerIcon, .v-vlite .v-volume .v-playerIcon {
   display: none;
-  position: absolute;
+  width: 100%;
+  height: 100%;
+  /* position: absolute;
   top: 50%;
   left: 50%;
   -webkit-transform: translateX(-50%) translateY(-50%);
-  transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%); */
+}
+.v-vlite .v-playPauseButton .v-playerIcon, .v-vlite .v-volume .v-playerIcon svg {
+  width: 100%;
+  height: 100%;
+  /* position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%); */
 }
 
 .v-vlite .v-subtitle .v-subIcon {
-  position: absolute;
+  width: 100%;
+  height: 100%;
+  /* position: absolute;
   top: 50%;
   left: 50%;
   -webkit-transform: translateX(-50%) translateY(-50%);
-  transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%); */
 }
 
 .v-vlite.v-paused .v-playPauseButton .v-iconPlay {
@@ -254,7 +285,7 @@ img {
 }
 .v-vlite .v-time {
   color: #fff;
-  font-size: 12px;
+  font-size: var(--font-size);
   float: left;
   height: 100%;
   display: flex;
@@ -263,7 +294,7 @@ img {
 .v-vlite .v-volume, .v-vlite .v-subtitle {
   position: relative;
   display: inline-block;
-  width: 40px;
+  width: var(--width-bar);
   height: 100%;
   cursor: pointer;
 }
@@ -271,7 +302,7 @@ img {
 .v-vlite .v-fullscreen {
   position: relative;
   display: inline-block;
-  width: 40px;
+  width: var(--width-bar);
   height: 100%;
   cursor: pointer;
 }
@@ -280,26 +311,28 @@ img {
 }
 .v-vlite .v-fullscreen .v-playerIcon {
   display: none;
-  position: absolute;
+  height: 100%;
+  width: 100%;
+  /* position: absolute;
   top: 50%;
   left: 50%;
   -webkit-transform: translateX(-50%) translateY(-50%);
-  transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(-50%); */
 }
 .v-vlite .v-playPauseButton svg {
   fill: #fff;
   transition: opacity .25s;
   opacity: .85;
-  width: 18px;
-  height: 18px;
 }
 
 .v-vlite .v-volume svg, .v-vlite .v-fullscreen svg, .v-vlite .v-subtitle .v-subIcon svg {
   fill: #fff;
   transition: opacity .25s;
   opacity: .85;
-  width: 18px;
-  height: 18px;
+  /* width: 18px;
+  height: 18px; */
+  height: 100%;
+  width: 100%;
 }
 
 
@@ -310,29 +343,15 @@ img {
   max-height: 100%;
 }
 
-.v-vlite .v-playPauseButton svg {
-    fill: #fff;
-    transition: opacity .25s;
-    opacity: .85;
-    width: 18px;
-    height: 18px;
-}
 .v-vlite.v-playing .v-playPauseButton .v-iconPause {
   display: block;
 }
 .v-vlite .v-fullscreen.v-exit .v-iconShrink, .v-vlite .v-fullscreen:not(.v-exit) .v-iconFullscreen {
   display: block;
 }
-.v-vlite .v-fullscreen svg {
-  fill: #fff;
-  transition: opacity .25s;
-  opacity: .85;
-  width: 18px;
-  height: 18px;
-}
 
 .v-vlite .v-progressBar:hover {
-    height: 5px;
+    height: 10px;
     top: -1px;
 }
 
@@ -347,7 +366,7 @@ img {
 .v-subtitlesList {
   background-color: #fff;
   border-radius: 5px;
-  bottom: 60px;
+  bottom: var(--width-bar);
   left: 50%;
   opacity: 0;
   position: absolute;
@@ -420,7 +439,7 @@ img {
   padding: 0;
   position: relative;
   transition: opacity 0.25s ease;
-  width: 40px;
+  width: var(--width-bar);
 }
 .v-bigPlay, .v-bigPlay svg {
   transition: opacity 0.25s ease;

@@ -33,15 +33,7 @@ const Home = () => {
   var sample_video = document.getElementById("sample_video");
   var video = document.getElementsByTagName("video")[0];
   const textTracks = _.get(video, "textTracks", null);
-
-  const [folders, setFolders] = useState([]);
-  const [filesOfParent, setFilesOfParent] = useState([]);
-  const [subtitles, setSubtitles] = useState(null);
-  const [fileName, setFileName] = useState("");
-  const [nextFile, setNextFile] = useState("");
-  const [previousFile, setPreviousFile] = useState("");
-  // const [focus, setFocus] = useState(0);
-  const [state, setState] = useState({
+  const stateInit = {
     url: null,
     pip: false,
     playing: true,
@@ -55,12 +47,27 @@ const Home = () => {
     playbackRate: 1.0,
     loop: false,
     isFullSreen: false,
-    boxTracks: false,
     mouseMove: new Date().getTime(),
-    hide: false
-  });
+  }
 
-  const changeSubtitle = (language) => {
+  const [folders, setFolders] = useState([]);
+  const [filesOfParent, setFilesOfParent] = useState([]);
+  const [subtitles, setSubtitles] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [nextFile, setNextFile] = useState("");
+  const [previousFile, setPreviousFile] = useState("");
+  const [hide, setHide] = useState(false);
+  const [boxTracks, setBoxTracks] = useState(false);
+  const [state, setState] = useState(stateInit);
+
+  if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles))  {
+    const subtitle = subtitles.find(s => s.default)
+    for (let i = 0; i < textTracks.length; i++) {
+      textTracks[i].mode = textTracks[i].language === subtitle?.language ? "showing" : "hidden";
+    }
+  }
+
+  const changeSubtitle = (language, noSetSub) => {
     if (textTracks && textTracks.length > 0) {
       for (let i = 0; i < textTracks.length; i++) {
         textTracks[i].mode = textTracks[i].language === language ? "showing" : "hidden";
@@ -70,7 +77,7 @@ const Home = () => {
     newSybtitle.forEach((sub) => {
       sub.default = sub.language === language;
     });
-    setSubtitles(newSybtitle);
+    if(!noSetSub) setSubtitles(newSybtitle);
   };
   const handleActionFile = (fileName, path) => {
     if (fileName) history.push(`/${[path, fileName].join("/")}?type=file`);
@@ -90,6 +97,11 @@ const Home = () => {
     return css.join(",");
   };
 
+  const sizeBar = {
+    "--width-bar": sample_video && sample_video.offsetHeight >= 1080 ? "100px" : "50px",
+    "--font-size": sample_video && sample_video.offsetHeight >= 1080 ? "24px" : "12px"
+  };
+
   const setStateElm = (value) => {
     const newStage = _.cloneDeep(state);
     _.assign(newStage, value);
@@ -97,12 +109,12 @@ const Home = () => {
   };
 
   const handleFullSreen = (isFullSreen) => {
+    setStateElm({ isFullSreen });
     if (isFullSreen) {
       sample_video.requestFullscreen();
     } else {
       document.exitFullscreen();
     }
-    setStateElm({ isFullSreen });
   };
 
   const handleSeekMouseDown = () => {
@@ -119,15 +131,17 @@ const Home = () => {
   };
 
   const handleAutoHide = () => {
-    setStateElm({ hide: false });
+    setHide(false);
     clearTimeout(currentRef.current);
     currentRef.current = setTimeout(() => {
-      setStateElm({ hide: true, boxTracks: false });
+      setHide(true);
+      setBoxTracks(false);
     }, 3000);
   };
 
   useLayoutEffect(() => {
     setSubtitles(null);
+    setStateElm({played: 0})
     if (type !== "file") {
       fetch(publicURL + fullPathRoot.join("/"))
         .then((response) => response.json())
@@ -186,14 +200,15 @@ const Home = () => {
               <div className="player-wrapper">
                 <div
                   id="sample_video"
-                  className={`v-vlite ${state.playing ? "v-playing" : "v-paused"} ${state.hide ? "nocursor" : ""}`}
+                  className={`v-vlite ${state.playing ? "v-playing" : "v-paused"} ${hide ? "nocursor" : ""}`}
                   onMouseMove={() => handleAutoHide()}
+                  style={sizeBar}
                 >
                   {!!subtitles && (
                     <ReactPlayer
                       ref={playerRef}
                       className="react-player vlite-js"
-                      style={{ "--shadow": borderText(4, "#000") }}
+                      // style={{ "--shadow": borderText(5, "#000") }}
                       // controls
                       url={publicURL + pathViewFile}
                       pip={state.pip}
@@ -222,7 +237,7 @@ const Home = () => {
                     />
                   )}
 
-                  <div className={`v-topBar ${state.hide ? "hidden" : ""}`}>
+                  <div className={`v-topBar ${hide ? "hidden" : ""}`}>
                     <span className="v-topTitle">{fileName}</span>
                   </div>
                   <div
@@ -235,7 +250,7 @@ const Home = () => {
                       <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0ZM7.5 12.67V7.33c0-.79.88-1.27 1.54-.84l4.15 2.67a1 1 0 0 1 0 1.68l-4.15 2.67c-.66.43-1.54-.05-1.54-.84Z"></path>
                     </svg>
                   </button>
-                  <div className={`v-controlBar ${state.hide ? "hidden" : ""}`}>
+                  <div className={`v-controlBar ${hide ? "hidden" : ""}`}>
                     <div className="v-progressBar">
                       <div className="v-progressSeek" style={{ width: `${(state.seeking ? state.seekingLine : state.played) * 100}%` }}></div>
                       <input
@@ -254,27 +269,27 @@ const Home = () => {
                     <div className="v-controlBarContent">
                       <div className="v-playPauseButton">
                         <span className="v-previousIcon v-iconNext" onClick={() => handleActionFile(previousFile, backRootPath)}>
-                          <svg version="1.1" viewBox="0 0 32 32" style={{ width: "38px", height: "38px" }}>
+                          <svg version="1.1" viewBox="0 0 36 36">
                             <path className="ytp-svg-fill" d="m 12,12 h 2 v 12 h -2 z m 3.5,6 8.5,6 V 12 z" id="ytp-id-10"></path>
                           </svg>
                         </span>
                       </div>
                       <div className="v-playPauseButton" onClick={() => setStateElm({ playing: !state.playing })}>
                         <span className="v-playerIcon v-iconPlay">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-                            <path d="M6 4l20 12L6 28z"></path>
+                          <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
+                            <path className="ytp-svg-fill" d="M 12,26 18.5,22 18.5,14 12,10 z M 18.5,22 25,18 25,18 18.5,14 z"></path>
                           </svg>
                         </span>
 
                         <span className="v-playerIcon v-iconPause">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-                            <path d="M4 4h10v24H4zm14 0h10v24H18z"></path>
+                          <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
+                            <path className="ytp-svg-fill" d="M 12,26 16,26 16,10 12,10 z M 21,26 25,26 25,10 21,10 z"></path>
                           </svg>
                         </span>
                       </div>
                       <div className="v-playPauseButton" onClick={() => handleActionFile(nextFile, backRootPath)}>
                         <span className="v-nextIcon v-iconNext">
-                          <svg version="1.1" viewBox="0 0 32 32" style={{ width: "38px", height: "38px" }}>
+                          <svg version="1.1" viewBox="0 0 36 36">
                             <path className="ytp-svg-fill" d="M 12,24 20.5,18 12,12 V 24 z M 22,12 v 12 h 2 V 12 h -2 z" id="ytp-id-12"></path>
                           </svg>
                         </span>
@@ -288,13 +303,17 @@ const Home = () => {
                           <Duration seconds={state.duration}></Duration>
                         </span>
                       </div>
-                      <div className={`v-subtitle ${state.boxTracks ? "v-active" : ""}`} onClick={() => setStateElm({ boxTracks: !state.boxTracks })}>
+                      <div className={`v-subtitle ${boxTracks ? "v-active" : ""}`} onClick={() => setBoxTracks(!boxTracks)}>
                         <span className="v-subIcon">
-                          <svg viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 0H2C.9 0 0 .9 0 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2ZM2 8h4v2H2V8Zm10 6H2v-2h10v2Zm6 0h-4v-2h4v2Zm0-4H8V8h10v2Z"></path>
+                          <svg className="ytp-subtitles-button-icon" height="100%" version="1.1" viewBox="0 0 36 36" width="100%" fill-opacity="1">
+                            <path
+                              d="M11,11 C9.9,11 9,11.9 9,13 L9,23 C9,24.1 9.9,25 11,25 L25,25 C26.1,25 27,24.1 27,23 L27,13 C27,11.9 26.1,11 25,11 L11,11 Z M11,17 L14,17 L14,19 L11,19 L11,17 L11,17 Z M20,23 L11,23 L11,21 L20,21 L20,23 L20,23 Z M25,23 L22,23 L22,21 L25,21 L25,23 L25,23 Z M25,19 L16,19 L16,17 L25,17 L25,19 L25,19 Z"
+                              fill="#fff"
+                              id="ytp-id-16"
+                            ></path>
                           </svg>
                         </span>
-                        <div className={`v-subtitlesList ${state.boxTracks ? "v-active" : ""}`}>
+                        <div className={`v-subtitlesList ${boxTracks ? "v-active" : ""}`}>
                           <ul>
                             <li onClick={() => changeSubtitle(null)}>
                               <button
@@ -325,25 +344,56 @@ const Home = () => {
                       </div>
                       <div className={`v-volume ${state.muted ? "v-muted" : ""}`} onClick={() => setStateElm({ muted: !state.muted })}>
                         <span className="v-playerIcon v-iconVolumeHigh">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 32">
-                            <path d="M27.814 28.814a1.5 1.5 0 0 1-1.061-2.56C29.492 23.515 31 19.874 31 16.001s-1.508-7.514-4.247-10.253a1.5 1.5 0 1 1 2.121-2.121C32.179 6.932 34 11.327 34 16.001s-1.82 9.069-5.126 12.374a1.495 1.495 0 0 1-1.061.439zm-5.329-2.829a1.5 1.5 0 0 1-1.061-2.56c4.094-4.094 4.094-10.755 0-14.849a1.5 1.5 0 1 1 2.121-2.121c2.55 2.55 3.954 5.94 3.954 9.546s-1.404 6.996-3.954 9.546a1.495 1.495 0 0 1-1.061.439zm-5.328-2.828a1.5 1.5 0 0 1-1.061-2.56 6.508 6.508 0 0 0 0-9.192 1.5 1.5 0 1 1 2.121-2.121c3.704 3.704 3.704 9.731 0 13.435a1.495 1.495 0 0 1-1.061.439zM13 30a1 1 0 0 1-.707-.293L4.586 22H1a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1h3.586l7.707-7.707A1 1 0 0 1 14 3v26a1.002 1.002 0 0 1-1 1z"></path>
+                          <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
+                            <path
+                              className="ytp-svg-fill ytp-svg-volume-animation-speaker"
+                              clip-path="url(#ytp-svg-volume-animation-mask)"
+                              d="M8,21 L12,21 L17,26 L17,10 L12,15 L8,15 L8,21 Z M19,14 L19,22 C20.48,21.32 21.5,19.77 21.5,18 C21.5,16.26 20.48,14.74 19,14 ZM19,11.29 C21.89,12.15 24,14.83 24,18 C24,21.17 21.89,23.85 19,24.71 L19,26.77 C23.01,25.86 26,22.28 26,18 C26,13.72 23.01,10.14 19,9.23 L19,11.29 Z"
+                              fill="#fff"
+                            ></path>
                           </svg>
                         </span>
                         <span className="v-playerIcon v-iconVolumeMute">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-                            <path d="M13 30a1 1 0 0 1-.707-.293L4.586 22H1a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1h3.586l7.707-7.707A1 1 0 0 1 14 3v26a1.002 1.002 0 0 1-1 1z"></path>
+                          <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
+                            <path
+                              className="ytp-svg-fill"
+                              d="m 21.48,17.98 c 0,-1.77 -1.02,-3.29 -2.5,-4.03 v 2.21 l 2.45,2.45 c .03,-0.2 .05,-0.41 .05,-0.63 z m 2.5,0 c 0,.94 -0.2,1.82 -0.54,2.64 l 1.51,1.51 c .66,-1.24 1.03,-2.65 1.03,-4.15 0,-4.28 -2.99,-7.86 -7,-8.76 v 2.05 c 2.89,.86 5,3.54 5,6.71 z M 9.25,8.98 l -1.27,1.26 4.72,4.73 H 7.98 v 6 H 11.98 l 5,5 v -6.73 l 4.25,4.25 c -0.67,.52 -1.42,.93 -2.25,1.18 v 2.06 c 1.38,-0.31 2.63,-0.95 3.69,-1.81 l 2.04,2.05 1.27,-1.27 -9,-9 -7.72,-7.72 z m 7.72,.99 -2.09,2.08 2.09,2.09 V 9.98 z"
+                              id="ytp-id-229"
+                            ></path>
                           </svg>
                         </span>
                       </div>
                       <div className={`v-fullscreen ${state.isFullSreen ? "v-exit" : ""}`} onClick={() => handleFullSreen(!state.isFullSreen)}>
                         <span className="v-playerIcon v-iconFullscreen">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-                            <path d="M27.414 24.586L22.828 20 20 22.828l4.586 4.586L20 32h12V20zM12 0H0v12l4.586-4.586 4.543 4.539 2.828-2.828-4.543-4.539zm0 22.828L9.172 20l-4.586 4.586L0 20v12h12l-4.586-4.586zM32 0H20l4.586 4.586-4.543 4.539 2.828 2.828 4.543-4.539L32 12z"></path>
+                          <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
+                            <g className="ytp-fullscreen-button-corner-0">
+                              <path className="ytp-svg-fill" d="m 10,16 2,0 0,-4 4,0 0,-2 L 10,10 l 0,6 0,0 z" id="ytp-id-207"></path>
+                            </g>
+                            <g className="ytp-fullscreen-button-corner-1">
+                              <path className="ytp-svg-fill" d="m 20,10 0,2 4,0 0,4 2,0 L 26,10 l -6,0 0,0 z" id="ytp-id-208"></path>
+                            </g>
+                            <g className="ytp-fullscreen-button-corner-2">
+                              <path className="ytp-svg-fill" d="m 24,24 -4,0 0,2 L 26,26 l 0,-6 -2,0 0,4 0,0 z" id="ytp-id-209"></path>
+                            </g>
+                            <g className="ytp-fullscreen-button-corner-3">
+                              <path className="ytp-svg-fill" d="M 12,20 10,20 10,26 l 6,0 0,-2 -4,0 0,-4 0,0 z" id="ytp-id-210"></path>
+                            </g>
                           </svg>
                         </span>
                         <span className="v-playerIcon v-iconShrink">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-                            <path d="M24.586 27.414L29.172 32 32 29.172l-4.586-4.586L32 20H20v12zM0 12h12V0L7.414 4.586 2.875.043.047 2.871l4.539 4.543zm0 17.172L2.828 32l4.586-4.586L12 32V20H0l4.586 4.586zM20 12h12l-4.586-4.586 4.547-4.543L29.133.043l-4.547 4.543L20 0z"></path>
+                          <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
+                            <g className="ytp-fullscreen-button-corner-2">
+                              <path className="ytp-svg-fill" d="m 14,14 -4,0 0,2 6,0 0,-6 -2,0 0,4 0,0 z" id="ytp-id-245"></path>
+                            </g>
+                            <g className="ytp-fullscreen-button-corner-3">
+                              <path className="ytp-svg-fill" d="m 22,14 0,-4 -2,0 0,6 6,0 0,-2 -4,0 0,0 z" id="ytp-id-246"></path>
+                            </g>
+                            <g className="ytp-fullscreen-button-corner-0">
+                              <path className="ytp-svg-fill" d="m 20,26 2,0 0,-4 4,0 0,-2 -6,0 0,6 0,0 z" id="ytp-id-247"></path>
+                            </g>
+                            <g className="ytp-fullscreen-button-corner-1">
+                              <path className="ytp-svg-fill" d="m 10,22 4,0 0,4 2,0 0,-6 -6,0 0,2 0,0 z" id="ytp-id-248"></path>
+                            </g>
                           </svg>
                         </span>
                       </div>
