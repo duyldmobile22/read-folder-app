@@ -117,6 +117,13 @@ const Home = () => {
     playerRef.current?.seekTo(parseFloat(state.seekingLine * state.duration), "seconds");
   };
 
+  const handleChangeSeek = (isNext) => {
+    let newSeconds = parseFloat(state.played * state.duration) + (isNext ? 30 : -30);
+    newSeconds = newSeconds > 0 ? newSeconds : 0;
+    setStateElm({ played: newSeconds / state.duration });
+    playerRef.current?.seekTo(newSeconds, "seconds");
+  };
+
   const handleAutoHide = () => {
     setHide(false);
     clearTimeout(currentRef.current);
@@ -201,6 +208,7 @@ const Home = () => {
                   id="sample_video"
                   className={`v-vlite ${state.playing ? "v-playing" : "v-paused"} ${hide ? "nocursor" : ""}`}
                   onMouseMove={() => handleAutoHide()}
+                  onClick={() => handleAutoHide()}
                   style={sizeBar}
                 >
                   {!!subtitles && (
@@ -275,6 +283,13 @@ const Home = () => {
                           </svg>
                         </span>
                       </div>
+                      <div className="v-playPauseButton" onClick={() => handleChangeSeek(false)}>
+                        <span className="v-nextIcon v-iconNext">
+                          <svg version="1.1" viewBox="0 0 36 36">
+                            <path d="M18.293 11.562v5.852l5.852-5.852v12.875l-5.852-5.852v5.852l-6.438-6.438z"></path>
+                          </svg>
+                        </span>
+                      </div>
                       <div className="v-playPauseButton" onClick={() => setStateElm({ playing: !state.playing })}>
                         <span className="v-playerIcon v-iconPlay">
                           <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
@@ -285,6 +300,13 @@ const Home = () => {
                         <span className="v-playerIcon v-iconPause">
                           <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
                             <path className="ytp-svg-fill" d="M 12,26 16,26 16,10 12,10 z M 21,26 25,26 25,10 21,10 z"></path>
+                          </svg>
+                        </span>
+                      </div>
+                      <div className="v-playPauseButton" onClick={() => handleChangeSeek(true)}>
+                        <span className="v-nextIcon v-iconNext">
+                          <svg version="1.1" viewBox="0 0 36 36">
+                            <path d="M17.707 11.562v5.852l-5.852-5.852v12.875l5.852-5.852v5.852l6.438-6.438z"></path>
                           </svg>
                         </span>
                       </div>
@@ -306,7 +328,7 @@ const Home = () => {
                       </div>
                       <div className={`v-subtitle ${boxTracks ? "v-active" : ""}`} onClick={() => !_.isEmpty(subtitles) && setBoxTracks(!boxTracks)}>
                         <span className="v-subIcon">
-                          <svg className="ytp-subtitles-button-icon" height="100%" version="1.1" viewBox="0 0 36 36" width="100%" fill-opacity={`${_.isEmpty(subtitles)? '0.3' : '1'}`}>
+                          <svg className="ytp-subtitles-button-icon" height="100%" version="1.1" viewBox="0 0 36 36" width="100%" fill-opacity={`${_.isEmpty(subtitles) ? '0.3' : '1'}`}>
                             <path
                               d="M11,11 C9.9,11 9,11.9 9,13 L9,23 C9,24.1 9.9,25 11,25 L25,25 C26.1,25 27,24.1 27,23 L27,13 C27,11.9 26.1,11 25,11 L11,11 Z M11,17 L14,17 L14,19 L11,19 L11,17 L11,17 Z M20,23 L11,23 L11,21 L20,21 L20,23 L20,23 Z M25,23 L22,23 L22,21 L25,21 L25,23 L25,23 Z M25,19 L16,19 L16,17 L25,17 L25,19 L25,19 Z"
                               fill="#fff"
