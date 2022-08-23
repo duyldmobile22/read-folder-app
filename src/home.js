@@ -34,20 +34,18 @@ const Home = () => {
   var video = document.getElementsByTagName("video")[0];
   const textTracks = _.get(video, "textTracks", null);
   const stateInit = {
-    url: null,
     pip: false,
     playing: true,
     controls: false,
     light: false,
-    volume: 0.8,
+    volume: 1,
     muted: false,
     played: 0,
     loaded: 0,
     duration: 0,
     playbackRate: 1.0,
-    loop: false,
+    loop: false,  
     isFullSreen: false,
-    mouseMove: new Date().getTime()
   };
 
   const [folders, setFolders] = useState([]);
@@ -149,7 +147,7 @@ const Home = () => {
 
   useLayoutEffect(() => {
     setSubtitles(null);
-    setStateElm({ played: 0 });
+    setStateElm({ played: 0, playing: true });
     if (type !== "file") {
       fetch(publicURL + fullPathRoot.join("/"))
         .then((response) => response.json())
@@ -216,7 +214,7 @@ const Home = () => {
                       ref={playerRef}
                       className="react-player vlite-js"
                       // style={{ "--shadow": borderText(5, "#000") }}
-                      // controls
+                      controls={state.controls}
                       url={publicURL + pathViewFile}
                       pip={state.pip}
                       playing={state.playing}
