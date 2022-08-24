@@ -44,8 +44,8 @@ const Home = () => {
     loaded: 0,
     duration: 0,
     playbackRate: 1.0,
-    loop: false,  
-    isFullSreen: false,
+    loop: false,
+    isFullSreen: false
   };
 
   const [folders, setFolders] = useState([]);
@@ -57,6 +57,7 @@ const Home = () => {
   const [hide, setHide] = useState(false);
   const [boxTracks, setBoxTracks] = useState(false);
   const [state, setState] = useState(stateInit);
+  const [screen, setScreen] = useState({ screenX: 0, screenY: 0 });
 
   if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles)) {
     const subtitle = subtitles.find((s) => s.default);
@@ -122,14 +123,20 @@ const Home = () => {
     playerRef.current?.seekTo(newSeconds, "seconds");
   };
 
-  const handleAutoHide = () => {
+  const handleAutoHide = (event) => {
     setHide(false);
+    // console.log(window.event.screenX, ':', document.screenY)
+    if (state.isFullSreen && (screen.screenX === window.event.screenX || screen.screenY === window.event.screenY))
+      setScreen({ screenX: window.event.screenX, screenY: window.event.screenY });
     clearTimeout(currentRef.current);
     currentRef.current = setTimeout(() => {
       setHide(true);
       setBoxTracks(false);
     }, 3000);
   };
+  useEffect(() => {
+    if (state.isFullSreen) setScreen({ screenX: window.event.screenX, screenY: window.event.screenY });
+  }, [state.isFullSreen]);
 
   const getSubtitles = () => {
     fetch(trasksURL + pathViewFile)
@@ -205,7 +212,7 @@ const Home = () => {
                 <div
                   id="sample_video"
                   className={`v-vlite ${state.playing ? "v-playing" : "v-paused"} ${hide ? "nocursor" : ""}`}
-                  onMouseMove={() => handleAutoHide()}
+                  onMouseMove={(event) => handleAutoHide(event)}
                   onClick={() => handleAutoHide()}
                   style={sizeBar}
                 >
@@ -243,7 +250,9 @@ const Home = () => {
                   )}
 
                   <div className={`v-topBar ${hide ? "hidden" : ""}`}>
-                    <span className="v-topTitle">{fileName}</span>
+                    <span className="v-topTitle">
+                      {screen.screenX}-{screen.screenY}
+                    </span>
                   </div>
                   <div
                     className="v-overlayVideo"
@@ -326,7 +335,14 @@ const Home = () => {
                       </div>
                       <div className={`v-subtitle ${boxTracks ? "v-active" : ""}`} onClick={() => !_.isEmpty(subtitles) && setBoxTracks(!boxTracks)}>
                         <span className="v-subIcon">
-                          <svg className="ytp-subtitles-button-icon" height="100%" version="1.1" viewBox="0 0 36 36" width="100%" fill-opacity={`${_.isEmpty(subtitles) ? '0.3' : '1'}`}>
+                          <svg
+                            className="ytp-subtitles-button-icon"
+                            height="100%"
+                            version="1.1"
+                            viewBox="0 0 36 36"
+                            width="100%"
+                            fill-opacity={`${_.isEmpty(subtitles) ? "0.3" : "1"}`}
+                          >
                             <path
                               d="M11,11 C9.9,11 9,11.9 9,13 L9,23 C9,24.1 9.9,25 11,25 L25,25 C26.1,25 27,24.1 27,23 L27,13 C27,11.9 26.1,11 25,11 L11,11 Z M11,17 L14,17 L14,19 L11,19 L11,17 L11,17 Z M20,23 L11,23 L11,21 L20,21 L20,23 L20,23 Z M25,23 L22,23 L22,21 L25,21 L25,23 L25,23 Z M25,19 L16,19 L16,17 L25,17 L25,19 L25,19 Z"
                               fill="#fff"
