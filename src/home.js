@@ -32,6 +32,7 @@ const Home = () => {
   const trasksURL = `http://${hostname}:8081/trasks/`;
   var sample_video = document.getElementById("sample_video");
   var video = document.getElementsByTagName("video")[0];
+  const body = document.getElementById("body");
   const textTracks = _.get(video, "textTracks", null);
   const stateInit = {
     pip: false,
@@ -57,7 +58,8 @@ const Home = () => {
   const [hide, setHide] = useState(false);
   const [boxTracks, setBoxTracks] = useState(false);
   const [state, setState] = useState(stateInit);
-  const [screen, setScreen] = useState({ screenX: 0, screenY: 0 });
+  const [screen, setScreen] = useState({ movementX: 0, movementY: 0 });
+  const [pointerLock, setPointerLock] = useState();
 
   if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles)) {
     const subtitle = subtitles.find((s) => s.default);
@@ -97,7 +99,7 @@ const Home = () => {
   const handleFullSreen = (isFullSreen) => {
     setStateElm({ isFullSreen });
     if (isFullSreen) {
-      sample_video.requestFullscreen();
+      document.getElementById("sample_video").requestFullscreen();
     } else {
       document.exitFullscreen();
     }
@@ -125,9 +127,23 @@ const Home = () => {
 
   const handleAutoHide = (event) => {
     setHide(false);
-    // console.log(window.event.screenX, ':', document.screenY)
-    if (state.isFullSreen && (screen.screenX === window.event.screenX || screen.screenY === window.event.screenY))
-      setScreen({ screenX: window.event.screenX, screenY: window.event.screenY });
+    // console.log(window.event.movementX +'-'+ window.event.movementY)
+    // document.set
+      // if ((!window.event.movementX || !window.event.movementY)) {
+      //   if (window.event.movementX > -1) {
+      //     console.log('trước')
+      //   }
+      //   if (window.event.movementX < 1) {
+      //     console.log('sau')
+      //   }
+      //   if (window.event.movementY < -1) {
+      //     console.log('trên')
+      //   }
+      //   if (window.event.movementY > 1) {
+      //     console.log('dưới')
+      //   }
+      // }
+    // setScreen({ screenX: window.event.screenX, screenY: window.event.screenY });
     clearTimeout(currentRef.current);
     currentRef.current = setTimeout(() => {
       setHide(true);
@@ -174,10 +190,34 @@ const Home = () => {
     setPreviousFile((filesOfParent[index - 1] || {}).name);
   }, [filesOfParent]);
 
+  useEffect(() => {
+      window.history.pushState(null, null, window.location.pathname);
+      // window.addEventListener("mousemove", handleAutoHide);
+      // window.addEventListener("click", () => console.log('click'));
+      // window.addEventListener("keydown", () =>handleFullSreen(true));
+      return () => {
+        // window.removeEventListener("mousemove", handleAutoHide);
+        // window.removeEventListener("click", () => console.log('click'));
+        // window.removeEventListener("keydown", () => handleFullSreen(true));
+      };
+
+  }, []);
+  // if(canvas){
+  //   canvas.onclick = function() {
+  //     console.log(document.pointerLockElement)
+  //     canvas.requestPointerLock();
+      
+  //   };
+    // canvas.onclick = function() {
+    //   canvas.requestPointerLock();
+    // };
+    // canvas.exitPointerLock();
+  // }
+    
   return (
     <div className="App">
       <header className="App-header">
-        <div className="App-body">
+        <div className="App-body" id="body" onClick={(event) => event.target.requestPointerLock()}>
           <b>{root !== "" ? <Link to="/">Home</Link> : "Home"}</b>
           {fullPathRoot.map((path, index) => {
             const currentPathArr = _.dropRight(fullPathRoot, fullPathRoot.length - index - 1);
