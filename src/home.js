@@ -30,8 +30,9 @@ const Home = () => {
   const publicURL = `http://${hostname}:8081/public/`;
   const subtitlesURL = `http://${hostname}:8081/subtitles/`;
   const trasksURL = `http://${hostname}:8081/trasks/`;
-  var sample_video = document.getElementById("sample_video");
-  var video = document.getElementsByTagName("video")[0];
+  const sample_video = document.getElementById("sample_video");
+  const video = document.getElementsByTagName("video")[0];
+  const body = document.getElementById("body");
   const textTracks = _.get(video, "textTracks", null);
   const stateInit = {
     pip: false,
@@ -44,8 +45,7 @@ const Home = () => {
     loaded: 0,
     duration: 0,
     playbackRate: 1.0,
-    loop: false,
-    isFullSreen: false
+    loop: false
   };
 
   const [folders, setFolders] = useState([]);
@@ -58,6 +58,10 @@ const Home = () => {
   const [boxTracks, setBoxTracks] = useState(false);
   const [state, setState] = useState(stateInit);
   const [screen, setScreen] = useState({ screenX: 0, screenY: 0 });
+  const [isFullSreen, setIsFullSreen] = useState(false);
+  const [indexFile, setIndexFile] = useState(0);
+  const [indexSub, setIndexSub] = useState(0);
+  const [string, setString] = useState("");
 
   if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles)) {
     const subtitle = subtitles.find((s) => s.default);
@@ -65,6 +69,82 @@ const Home = () => {
       textTracks[i].mode = textTracks[i].language === subtitle?.language ? "showing" : "hidden";
     }
   }
+
+  const onBackButtonEvent = (e) => {
+    window.history.pushState(null, null, window.location.pathname);
+    history.replace(`/${backRootPath}`);
+  };
+
+  useLayoutEffect(() => {
+    setSubtitles(null);
+    setStateElm({ played: 0, playing: true });
+    setBoxTracks(false);
+    if (!isFullSreen) setIndexFile(0);
+    if (type !== "file") {
+      fetch(publicURL + fullPathRoot.join("/"))
+        .then((response) => response.json())
+        .then((data) => setFolders(data));
+    } else {
+      getSubtitles();
+      fetch(publicURL + backRootPath)
+        .then((response) => response.json())
+        .then((data) => setFilesOfParent(data.filter((d) => d.type === "file")));
+    }
+    window.addEventListener("fullscreenchange", onFullSreenEvent);
+    if (type != "file") {
+      window.history.pushState(null, null, window.location.pathname);
+      window.addEventListener("popstate", onBackButtonEvent);
+    }
+    return () => {
+      window.removeEventListener("popstate", onBackButtonEvent);
+      window.removeEventListener("fullscreenchange", onFullSreenEvent);
+    };
+  }, [rootPath]);
+
+  useEffect(() => {
+    const index = _.findIndex(filesOfParent, (f) => f.name === fileNameUrl);
+    setFileName((filesOfParent[index] || {}).name);
+    setNextFile((filesOfParent[index + 1] || {}).name);
+    setPreviousFile((filesOfParent[index - 1] || {}).name);
+  }, [filesOfParent]);
+
+  useEffect(() => {
+    if (!_.isEmpty(folders)) {
+      document.getElementById("file_0").classList.add("f-active");
+    }
+  }, [folders]);
+
+  useEffect(() => {
+    const files = document.getElementsByClassName("f-active");
+    if (files && !_.isEmpty(files)) {
+      for (let index = 0; index < files.length; index++) {
+        files[index].classList.remove("f-active");
+      }
+    }
+    const nextFile = document.getElementById(`file_${indexFile}`);
+    if (nextFile) {
+      nextFile.classList.add("f-active");
+      nextFile.scrollIntoView();
+    }
+    const playFile = document.getElementById(`play_${indexFile}`);
+    if (playFile) {
+      playFile.classList.add("f-active");
+    }
+    handleAutoHide();
+  }, [indexFile]);
+
+  useEffect(() => {
+    const files = document.getElementsByClassName("s-active");
+    if (files && !_.isEmpty(files)) {
+      for (let index = 0; index < files.length; index++) {
+        files[index].classList.remove("s-active");
+      }
+    }
+    const subFile = document.getElementById(`sub_${indexSub}`);
+    if (subFile) {
+      subFile.classList.add("s-active");
+    }
+  }, [indexSub]);
 
   const changeSubtitle = (language, noSetSub) => {
     if (textTracks && textTracks.length > 0) {
@@ -78,6 +158,7 @@ const Home = () => {
     });
     if (!noSetSub) setSubtitles(newSybtitle);
   };
+
   const handleActionFile = (fileName, path) => {
     if (fileName) history.push(`/${[path, fileName].join("/")}?type=file`);
   };
@@ -88,6 +169,21 @@ const Home = () => {
     "--font-size-subtitle": sample_video ? sample_video.offsetHeight / 18 + "px" : "24px"
   };
 
+  useEffect(() => {
+    if (sample_video && type === "file") {
+      handleFullSreen(true);
+    }
+  }, [sample_video]);
+
+  const onFullSreenEvent = (e) => {
+    if (!document.fullscreenElement) {
+      history.push(`/${backRootPath}`);
+      setIsFullSreen(false);
+    } else {
+      setIsFullSreen(true);
+    }
+  };
+
   const setStateElm = (value) => {
     const newStage = _.cloneDeep(state);
     _.assign(newStage, value);
@@ -95,7 +191,6 @@ const Home = () => {
   };
 
   const handleFullSreen = (isFullSreen) => {
-    setStateElm({ isFullSreen });
     if (isFullSreen) {
       sample_video.requestFullscreen();
     } else {
@@ -117,7 +212,7 @@ const Home = () => {
   };
 
   const handleChangeSeek = (isNext) => {
-    let newSeconds = parseFloat(state.played * state.duration) + (isNext ? 30 : -30);
+    let newSeconds = parseFloat(state.played * state.duration) + (isNext ? 15 : -15);
     newSeconds = newSeconds > 0 ? newSeconds : 0;
     setStateElm({ played: newSeconds / state.duration });
     playerRef.current?.seekTo(newSeconds, "seconds");
@@ -125,18 +220,14 @@ const Home = () => {
 
   const handleAutoHide = (event) => {
     setHide(false);
-    // console.log(window.event.screenX, ':', document.screenY)
-    if (state.isFullSreen && (screen.screenX === window.event.screenX || screen.screenY === window.event.screenY))
-      setScreen({ screenX: window.event.screenX, screenY: window.event.screenY });
     clearTimeout(currentRef.current);
-    currentRef.current = setTimeout(() => {
-      setHide(true);
-      setBoxTracks(false);
-    }, 3000);
+    if (indexFile == 0) {
+      currentRef.current = setTimeout(() => {
+        setHide(true);
+        setBoxTracks(false);
+      }, 3000);
+    }
   };
-  useEffect(() => {
-    if (state.isFullSreen) setScreen({ screenX: window.event.screenX, screenY: window.event.screenY });
-  }, [state.isFullSreen]);
 
   const getSubtitles = () => {
     fetch(trasksURL + pathViewFile)
@@ -152,39 +243,77 @@ const Home = () => {
       });
   };
 
-  useLayoutEffect(() => {
-    setSubtitles(null);
-    setStateElm({ played: 0, playing: true });
-    if (type !== "file") {
-      fetch(publicURL + fullPathRoot.join("/"))
-        .then((response) => response.json())
-        .then((data) => setFolders(data));
-    } else {
-      getSubtitles();
-      fetch(publicURL + backRootPath)
-        .then((response) => response.json())
-        .then((data) => setFilesOfParent(data.filter((d) => d.type === "file")));
-    }
-  }, [rootPath]);
+  const actionInListFileHandle = (action) => {
+    let newIndex = action ? indexFile + 1 : indexFile - 1;
+    if (newIndex < 0) newIndex = folders.length - 1;
+    if (newIndex >= folders.length) newIndex = 0;
+    setIndexFile(newIndex);
+  };
 
-  useEffect(() => {
-    const index = _.findIndex(filesOfParent, (f) => f.name === fileNameUrl);
-    setFileName((filesOfParent[index] || {}).name);
-    setNextFile((filesOfParent[index + 1] || {}).name);
-    setPreviousFile((filesOfParent[index - 1] || {}).name);
-  }, [filesOfParent]);
+  const upDownVideoHandle = (action) => {
+    if (!boxTracks) {
+      let newIndex = action ? 3 : 0;
+      setIndexFile(newIndex);
+    } else {
+      let newIndex = action ? indexSub + 1 : indexSub - 1;
+      if (newIndex < 0) newIndex = subtitles.length;
+      if (newIndex > subtitles.length) newIndex = 0;
+      setIndexSub(newIndex);
+    }
+  };
+
+  const leftRightVideoHandle = (action) => {
+    if (indexFile == 0) {
+      handleChangeSeek(action);
+    } else {
+      let newIndex = action ? indexFile + 1 : indexFile - 1;
+      if (newIndex < 1) newIndex = 8;
+      if (newIndex > 8) newIndex = 1;
+      setIndexFile(newIndex);
+    }
+  };
+
+  const boxTrackHandle = () => {
+    if (!_.isEmpty(subtitles) && !boxTracks) {
+      const index = _.findIndex(subtitles, (s) => !!s.default);
+      setIndexSub(index + 1);
+    }
+    !_.isEmpty(subtitles) && setBoxTracks(!boxTracks);
+  };
 
   return (
-    <div className="App">
+    <div
+      className="App"
+      onMouseMove={(event) => {
+        const { movementX, movementY } = event;
+        if (!isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) actionInListFileHandle(movementY > 0);
+        if (!isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) actionInListFileHandle(movementX > 0);
+      }}
+      onClick={() => {
+        document.getElementsByClassName("f-active")[0].getElementsByTagName("a")[0].click();
+      }}
+    >
       <header className="App-header">
-        <div className="App-body">
-          <b>{root !== "" ? <Link to="/">Home</Link> : "Home"}</b>
+        <div className="App-body" id="body">
+          <b>
+            {root !== "" ? (
+              <Link id={`path_0`} to="/">
+                Home
+              </Link>
+            ) : (
+              "Home"
+            )}
+          </b>
           {fullPathRoot.map((path, index) => {
             const currentPathArr = _.dropRight(fullPathRoot, fullPathRoot.length - index - 1);
             return (
               <b key={index}>
                 {" / "}
-                {root !== "" && index + 1 !== fullPathRoot.length && <Link to={`/${currentPathArr.join("/")}`}>{path}</Link>}
+                {root !== "" && index + 1 !== fullPathRoot.length && (
+                  <Link id={`path_${index + 1}`} to={`/${currentPathArr.join("/")}`}>
+                    {path}
+                  </Link>
+                )}
                 {root !== "" && index + 1 === fullPathRoot.length && path}
               </b>
             );
@@ -192,7 +321,13 @@ const Home = () => {
 
           <br />
           <br />
-          <b>{root !== "" && <Link to={`/${backRootPath}`}>{"< Back"}</Link>}</b>
+          <b>
+            {root !== "" && (
+              <Link id={`back_0`} to={`/${backRootPath}`}>
+                {"< Back"}
+              </Link>
+            )}
+          </b>
           <br />
           <br />
           <br />
@@ -200,7 +335,7 @@ const Home = () => {
             folders.map((folder, index) => {
               const fullPath = _.filter([root, pathName, folder.name], (elm) => !!elm).join("/");
               return (
-                <div className={`App-item`} key={index}>
+                <div className={`App-item`} id={`file_${index}`} key={index}>
                   <img src={folder.type === "file" ? fileIcon : folderIcon} alt="icon" />
                   <Link to={`/${fullPath}${folder.type === "file" ? "?type=file" : ""}`}>{folder.name}</Link>
                 </div>
@@ -210,12 +345,28 @@ const Home = () => {
             <>
               <div className="player-wrapper">
                 <div
+                  onMouseMove={(event) => {
+                    const { movementX, movementY } = event;
+                    if (isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) upDownVideoHandle(movementY > 0);
+                    if (isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) leftRightVideoHandle(movementX > 0);
+                    handleAutoHide();
+                  }}
+                  onClick={() => {
+                    handleAutoHide();
+                    if (indexFile == 0) {
+                      setStateElm({ playing: !state.playing });
+                    } else if (boxTracks) {
+                      document.getElementsByClassName("s-active")[0].click();
+                      setIndexFile(0);
+                    } else {
+                      document.getElementsByClassName("f-active")[0].click();
+                    }
+                  }}
                   id="sample_video"
                   className={`v-vlite ${state.playing ? "v-playing" : "v-paused"} ${hide ? "nocursor" : ""}`}
-                  onMouseMove={(event) => handleAutoHide(event)}
-                  onClick={() => handleAutoHide()}
                   style={sizeBar}
                 >
+                  <div className="mang"></div>
                   {!!subtitles && (
                     <ReactPlayer
                       ref={playerRef}
@@ -250,14 +401,12 @@ const Home = () => {
                   )}
 
                   <div className={`v-topBar ${hide ? "hidden" : ""}`}>
-                    <span className="v-topTitle">
-                      {screen.screenX}-{screen.screenY}
-                    </span>
+                    <span className="v-topTitle">{fileName}</span>
                   </div>
                   <div
                     className="v-overlayVideo"
                     onClick={() => setStateElm({ playing: !state.playing })}
-                    onDoubleClick={() => handleFullSreen(!state.isFullSreen)}
+                    onDoubleClick={() => handleFullSreen(!isFullSreen)}
                   ></div>
                   <button className="v-bigPlay v-controlButton" aria-label="Play" onClick={() => setStateElm({ playing: !state.playing })}>
                     <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -265,7 +414,7 @@ const Home = () => {
                     </svg>
                   </button>
                   <div className={`v-controlBar ${hide ? "hidden" : ""}`}>
-                    <div className="v-progressBar">
+                    <div className="v-progressBar" id="play_0">
                       <div className="v-progressSeek" style={{ width: `${(state.seeking ? state.seekingLine : state.played) * 100}%` }}></div>
                       <input
                         onMouseDown={handleSeekMouseDown}
@@ -283,21 +432,21 @@ const Home = () => {
                       />
                     </div>
                     <div className="v-controlBarContent">
-                      <div className="v-playPauseButton">
-                        <span className="v-previousIcon v-iconNext" onClick={() => handleActionFile(previousFile, backRootPath)}>
+                      <div className="v-playPauseButton" id="play_1" onClick={() => handleActionFile(previousFile, backRootPath)}>
+                        <span className="v-previousIcon v-iconNext">
                           <svg version="1.1" viewBox="0 0 36 36">
                             <path className="ytp-svg-fill" d="m 12,12 h 2 v 12 h -2 z m 3.5,6 8.5,6 V 12 z" id="ytp-id-10"></path>
                           </svg>
                         </span>
                       </div>
-                      <div className="v-playPauseButton" onClick={() => handleChangeSeek(false)}>
+                      <div className="v-playPauseButton" id="play_2" onClick={() => handleChangeSeek(false)}>
                         <span className="v-nextIcon v-iconNext">
                           <svg version="1.1" viewBox="0 0 36 36">
                             <path d="M18.293 11.562v5.852l5.852-5.852v12.875l-5.852-5.852v5.852l-6.438-6.438z"></path>
                           </svg>
                         </span>
                       </div>
-                      <div className="v-playPauseButton" onClick={() => setStateElm({ playing: !state.playing })}>
+                      <div className="v-playPauseButton" id="play_3" onClick={() => setStateElm({ playing: !state.playing })}>
                         <span className="v-playerIcon v-iconPlay">
                           <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
                             <path className="ytp-svg-fill" d="M 12,26 18.5,22 18.5,14 12,10 z M 18.5,22 25,18 25,18 18.5,14 z"></path>
@@ -310,14 +459,14 @@ const Home = () => {
                           </svg>
                         </span>
                       </div>
-                      <div className="v-playPauseButton" onClick={() => handleChangeSeek(true)}>
+                      <div className="v-playPauseButton" id="play_4" onClick={() => handleChangeSeek(true)}>
                         <span className="v-nextIcon v-iconNext">
                           <svg version="1.1" viewBox="0 0 36 36">
                             <path d="M17.707 11.562v5.852l-5.852-5.852v12.875l5.852-5.852v5.852l6.438-6.438z"></path>
                           </svg>
                         </span>
                       </div>
-                      <div className="v-playPauseButton" onClick={() => handleActionFile(nextFile, backRootPath)}>
+                      <div className="v-playPauseButton" id="play_5" onClick={() => handleActionFile(nextFile, backRootPath)}>
                         <span className="v-nextIcon v-iconNext">
                           <svg version="1.1" viewBox="0 0 36 36">
                             <path className="ytp-svg-fill" d="M 12,24 20.5,18 12,12 V 24 z M 22,12 v 12 h 2 V 12 h -2 z" id="ytp-id-12"></path>
@@ -333,7 +482,7 @@ const Home = () => {
                           <Duration seconds={state.duration}></Duration>
                         </span>
                       </div>
-                      <div className={`v-subtitle ${boxTracks ? "v-active" : ""}`} onClick={() => !_.isEmpty(subtitles) && setBoxTracks(!boxTracks)}>
+                      <div className={`v-subtitle`} id="play_6" onClick={() => boxTrackHandle()}>
                         <span className="v-subIcon">
                           <svg
                             className="ytp-subtitles-button-icon"
@@ -352,7 +501,7 @@ const Home = () => {
                         </span>
                         <div className={`v-subtitlesList ${boxTracks ? "v-active" : ""}`}>
                           <ul>
-                            <li onClick={() => changeSubtitle(null)}>
+                            <li id={`sub_0`} onClick={() => changeSubtitle(null)}>
                               <button
                                 className={`v-trackButton ${!subtitles || !subtitles.find((s) => !!s.default) ? "v-active" : ""}`}
                                 data-language="off"
@@ -366,7 +515,7 @@ const Home = () => {
                             {subtitles &&
                               subtitles.map((sub, index) => {
                                 return (
-                                  <li onClick={() => changeSubtitle(sub.language)} key={index}>
+                                  <li id={`sub_${index + 1}`} onClick={() => changeSubtitle(sub.language)} key={index}>
                                     <button className={`v-trackButton ${sub.default ? "v-active" : ""}`} data-language="off">
                                       <svg viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M5.6 10.6 1.4 6.4 0 7.8l5.6 5.6 12-12L16.2 0z"></path>
@@ -379,7 +528,7 @@ const Home = () => {
                           </ul>
                         </div>
                       </div>
-                      <div className={`v-volume ${state.muted ? "v-muted" : ""}`} onClick={() => setStateElm({ muted: !state.muted })}>
+                      <div className={`v-volume ${state.muted ? "v-muted" : ""}`} id="play_7" onClick={() => setStateElm({ muted: !state.muted })}>
                         <span className="v-playerIcon v-iconVolumeHigh">
                           <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
                             <path
@@ -400,7 +549,7 @@ const Home = () => {
                           </svg>
                         </span>
                       </div>
-                      <div className={`v-fullscreen ${state.isFullSreen ? "v-exit" : ""}`} onClick={() => handleFullSreen(!state.isFullSreen)}>
+                      <div className={`v-fullscreen ${isFullSreen ? "v-exit" : ""}`} id="play_8" onClick={() => handleFullSreen(!isFullSreen)}>
                         <span className="v-playerIcon v-iconFullscreen">
                           <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
                             <g className="ytp-fullscreen-button-corner-0">
@@ -437,18 +586,6 @@ const Home = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="App-list">
-                {filesOfParent.map((file, index) => {
-                  const fullPath = _.filter([root, backPath, file.name], (elm) => !!elm).join("/");
-                  return (
-                    <div className={`App-item ${file.name === fileName ? "active" : ""}`} key={index}>
-                      <img src={file.type === "file" ? fileIcon : folderIcon} alt="icon" />
-                      <Link to={`/${fullPath}?type=file`}>{file.name}</Link>
-                      {file.name === fileName && <img src={startingGif} alt="icon" />}
-                    </div>
-                  );
-                })}
               </div>
             </>
           )}

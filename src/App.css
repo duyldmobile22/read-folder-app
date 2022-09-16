@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+  cursor: pointer;
 }
 
 .react-player video::cue{
@@ -7,6 +8,7 @@
   /* background: none; */
   font-size: var(--font-size-subtitle);
   font-weight: 700;
+  font-family: Tahoma;
  }
  
 .App-logo {
@@ -22,6 +24,8 @@ a {
   text-align: left;
   font-size: 20px;
   margin-top: 0;
+  height: 900px;
+  overflow: auto;
 }
 img {
   width: 15px;
@@ -350,8 +354,12 @@ img {
 }
 
 .v-vlite .v-progressBar:hover {
-    height: 10px;
+    height: 12px;
     top: -1px;
+}
+.v-vlite .v-progressBar.f-active {
+  height: 12px;
+  top: -1px;
 }
 
 .v-vlite .v-volume.v-muted .v-iconVolumeMute, .v-vlite .v-volume:not(.v-muted) .v-iconVolumeHigh {
@@ -472,4 +480,24 @@ img {
   border: 1px solid #808080;
   background: #61616152;
   font-size: 24px;
+}
+#block-mouse {
+  width: 200px;
+  height: 200px;
+  position:absolute;
+  left: 0px;
+  top: 0px;
+  border:1px solid #fff;
+}
+.f-active{
+  background-color: #818080c5;
+}
+.s-active{
+  background-color: #818080c5;
+}
+#sample_video:fullscreen .mang{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
 }
