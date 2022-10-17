@@ -215,12 +215,11 @@ const Home = () => {
   const handleAutoHide = (event) => {
     setHide(false);
     clearTimeout(currentRef.current);
-    if (indexFile === 0) {
-      currentRef.current = setTimeout(() => {
-        setHide(true);
-        setBoxTracks(false);
-      }, 3000);
-    }
+    currentRef.current = setTimeout(() => {
+      setHide(true);
+      setBoxTracks(false);
+      setIndexFile(0);
+    }, indexFile === 0 ? 3000 : 5000);
   };
 
   const getSubtitles = () => {
