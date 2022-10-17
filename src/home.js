@@ -3,7 +3,7 @@ import React from "react";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import fileIcon from "./file.png";
 import folderIcon from "./folder.png";
-import startingGif from "./starting.png";
+// import startingGif from "./starting.png";
 import "./App.css";
 import ReactPlayer from "react-player";
 import _ from "lodash";
@@ -22,7 +22,7 @@ const Home = () => {
   let fileNameUrl = _.last(fullPathRoot) || "";
   let pathName = _.drop(_.clone(fullPathRoot)).join("/");
   let backRootPath = _.dropRight(_.clone(fullPathRoot)).join("/");
-  let backPath = _.dropRight(_.drop(_.clone(fullPathRoot))).join("/");
+  // let backPath = _.dropRight(_.drop(_.clone(fullPathRoot))).join("/");
   let pathViewFile = fullPathRoot.join("/");
 
   const queryParams = new URLSearchParams(window.location.search);
@@ -32,7 +32,7 @@ const Home = () => {
   const trasksURL = `http://${hostname}:8081/trasks/`;
   const sample_video = document.getElementById("sample_video");
   const video = document.getElementsByTagName("video")[0];
-  const body = document.getElementById("body");
+  // const body = document.getElementById("body");
   const textTracks = _.get(video, "textTracks", null);
   const stateInit = {
     pip: false,
@@ -57,11 +57,12 @@ const Home = () => {
   const [hide, setHide] = useState(false);
   const [boxTracks, setBoxTracks] = useState(false);
   const [state, setState] = useState(stateInit);
-  const [screen, setScreen] = useState({ screenX: 0, screenY: 0 });
+  // const [screen, setScreen] = useState({ screenX: 0, screenY: 0 });
   const [isFullSreen, setIsFullSreen] = useState(false);
   const [indexFile, setIndexFile] = useState(0);
   const [indexSub, setIndexSub] = useState(0);
-  const [string, setString] = useState("");
+  const [isMouse, setIsMouse] = useState(false);
+  // const [string, setString] = useState("");
 
   if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles)) {
     const subtitle = subtitles.find((s) => s.default);
@@ -91,7 +92,7 @@ const Home = () => {
         .then((data) => setFilesOfParent(data.filter((d) => d.type === "file")));
     }
     window.addEventListener("fullscreenchange", onFullSreenEvent);
-    if (type != "file") {
+    if (type !== "file") {
       window.history.pushState(null, null, window.location.pathname);
       window.addEventListener("popstate", onBackButtonEvent);
     }
@@ -211,8 +212,8 @@ const Home = () => {
     playerRef.current?.seekTo(parseFloat(state.seekingLine * state.duration), "seconds");
   };
 
-  const handleChangeSeek = (isNext) => {
-    let newSeconds = parseFloat(state.played * state.duration) + (isNext ? 15 : -15);
+  const handleChangeSeek = (isNext, seconds) => {
+    let newSeconds = parseFloat(state.played * state.duration) + (isNext ? seconds || 15 : -(seconds || 15));
     newSeconds = newSeconds > 0 ? newSeconds : 0;
     setStateElm({ played: newSeconds / state.duration });
     playerRef.current?.seekTo(newSeconds, "seconds");
@@ -221,7 +222,7 @@ const Home = () => {
   const handleAutoHide = (event) => {
     setHide(false);
     clearTimeout(currentRef.current);
-    if (indexFile == 0) {
+    if (indexFile === 0) {
       currentRef.current = setTimeout(() => {
         setHide(true);
         setBoxTracks(false);
@@ -263,7 +264,7 @@ const Home = () => {
   };
 
   const leftRightVideoHandle = (action) => {
-    if (indexFile == 0) {
+    if (indexFile === 0) {
       handleChangeSeek(action);
     } else {
       let newIndex = action ? indexFile + 1 : indexFile - 1;
@@ -285,14 +286,21 @@ const Home = () => {
     <div
       className="App"
       onMouseMove={(event) => {
-        const { movementX, movementY } = event;
-        if (!isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) actionInListFileHandle(movementY > 0);
-        if (!isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) actionInListFileHandle(movementX > 0);
+        if (!isMouse) {
+          const { movementX, movementY } = event;
+          if (!isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) actionInListFileHandle(movementY > 0);
+          if (!isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) actionInListFileHandle(movementX > 0);
+        }
       }}
       onClick={() => {
-        document.getElementsByClassName("f-active")[0].getElementsByTagName("a")[0].click();
+        if (!isMouse) {
+          document.getElementsByClassName("f-active")[0].getElementsByTagName("a")[0].click();
+        }
       }}
     >
+      <div style={{ position: "fixed" }} onClick={() => setIsMouse(!isMouse)}>
+        <button>{isMouse ? "To Remote" : "To Mouse"}</button>
+      </div>
       <header className="App-header">
         <div className="App-body" id="body">
           <b>
@@ -346,27 +354,33 @@ const Home = () => {
               <div className="player-wrapper">
                 <div
                   onMouseMove={(event) => {
-                    const { movementX, movementY } = event;
-                    if (isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) upDownVideoHandle(movementY > 0);
-                    if (isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) leftRightVideoHandle(movementX > 0);
+                    if (!isMouse) {
+                      const { movementX, movementY } = event;
+                      if (isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) upDownVideoHandle(movementY > 0);
+                      if (isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) leftRightVideoHandle(movementX > 0);
+                      
+                    }
                     handleAutoHide();
                   }}
                   onClick={() => {
                     handleAutoHide();
-                    if (indexFile == 0) {
-                      setStateElm({ playing: !state.playing });
-                    } else if (boxTracks) {
-                      document.getElementsByClassName("s-active")[0].click();
-                      setIndexFile(0);
-                    } else {
-                      document.getElementsByClassName("f-active")[0].click();
+                    if (!isMouse) {
+                      
+                      if (indexFile === 0) {
+                        setStateElm({ playing: !state.playing });
+                      } else if (boxTracks) {
+                        document.getElementsByClassName("s-active")[0].click();
+                        setIndexFile(0);
+                      } else {
+                        document.getElementsByClassName("f-active")[0].click();
+                      }
                     }
                   }}
                   id="sample_video"
                   className={`v-vlite ${state.playing ? "v-playing" : "v-paused"} ${hide ? "nocursor" : ""}`}
                   style={sizeBar}
                 >
-                  <div className="mang"></div>
+                  {!isMouse && <div className="mang"></div>}
                   {!!subtitles && (
                     <ReactPlayer
                       ref={playerRef}
@@ -439,7 +453,7 @@ const Home = () => {
                           </svg>
                         </span>
                       </div>
-                      <div className="v-playPauseButton" id="play_2" onClick={() => handleChangeSeek(false)}>
+                      <div className="v-playPauseButton" id="play_2" onClick={() => handleChangeSeek(false, 120)}>
                         <span className="v-nextIcon v-iconNext">
                           <svg version="1.1" viewBox="0 0 36 36">
                             <path d="M18.293 11.562v5.852l5.852-5.852v12.875l-5.852-5.852v5.852l-6.438-6.438z"></path>
@@ -459,7 +473,7 @@ const Home = () => {
                           </svg>
                         </span>
                       </div>
-                      <div className="v-playPauseButton" id="play_4" onClick={() => handleChangeSeek(true)}>
+                      <div className="v-playPauseButton" id="play_4" onClick={() => handleChangeSeek(true, 120)}>
                         <span className="v-nextIcon v-iconNext">
                           <svg version="1.1" viewBox="0 0 36 36">
                             <path d="M17.707 11.562v5.852l-5.852-5.852v12.875l5.852-5.852v5.852l6.438-6.438z"></path>
