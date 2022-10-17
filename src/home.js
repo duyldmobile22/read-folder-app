@@ -1,14 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React from "react";
-import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
 import fileIcon from "./file.png";
 import folderIcon from "./folder.png";
-// import startingGif from "./starting.png";
 import "./App.css";
 import ReactPlayer from "react-player";
 import _ from "lodash";
 import Duration from "./Duration";
-// import screenfull from "screenfull";
 import { Link, useHistory } from "react-router-dom";
 
 const Home = () => {
@@ -22,7 +19,6 @@ const Home = () => {
   let fileNameUrl = _.last(fullPathRoot) || "";
   let pathName = _.drop(_.clone(fullPathRoot)).join("/");
   let backRootPath = _.dropRight(_.clone(fullPathRoot)).join("/");
-  // let backPath = _.dropRight(_.drop(_.clone(fullPathRoot))).join("/");
   let pathViewFile = fullPathRoot.join("/");
 
   const queryParams = new URLSearchParams(window.location.search);
@@ -32,7 +28,6 @@ const Home = () => {
   const trasksURL = `http://${hostname}:8081/trasks/`;
   const sample_video = document.getElementById("sample_video");
   const video = document.getElementsByTagName("video")[0];
-  // const body = document.getElementById("body");
   const textTracks = _.get(video, "textTracks", null);
   const stateInit = {
     pip: false,
@@ -57,17 +52,15 @@ const Home = () => {
   const [hide, setHide] = useState(false);
   const [boxTracks, setBoxTracks] = useState(false);
   const [state, setState] = useState(stateInit);
-  // const [screen, setScreen] = useState({ screenX: 0, screenY: 0 });
   const [isFullSreen, setIsFullSreen] = useState(false);
   const [indexFile, setIndexFile] = useState(0);
   const [indexSub, setIndexSub] = useState(0);
   const [isMouse, setIsMouse] = useState(false);
-  // const [string, setString] = useState("");
 
   if (!_.isEmpty(textTracks) && !_.isEmpty(subtitles)) {
     const subtitle = subtitles.find((s) => s.default);
-    for (let i = 0; i < textTracks.length; i++) {
-      textTracks[i].mode = textTracks[i].language === subtitle?.language ? "showing" : "hidden";
+    for (const element of textTracks) {
+      element.mode = element.language === subtitle?.language ? "showing" : "hidden";
     }
   }
 
@@ -118,8 +111,8 @@ const Home = () => {
   useEffect(() => {
     const files = document.getElementsByClassName("f-active");
     if (files && !_.isEmpty(files)) {
-      for (let index = 0; index < files.length; index++) {
-        files[index].classList.remove("f-active");
+      for (const element of files) {
+        element.classList.remove("f-active");
       }
     }
     const nextFile = document.getElementById(`file_${indexFile}`);
@@ -137,8 +130,8 @@ const Home = () => {
   useEffect(() => {
     const files = document.getElementsByClassName("s-active");
     if (files && !_.isEmpty(files)) {
-      for (let index = 0; index < files.length; index++) {
-        files[index].classList.remove("s-active");
+      for (const element of files) {
+        element.classList.remove("s-active");
       }
     }
     const subFile = document.getElementById(`sub_${indexSub}`);
@@ -149,8 +142,8 @@ const Home = () => {
 
   const changeSubtitle = (language, noSetSub) => {
     if (textTracks && textTracks.length > 0) {
-      for (let i = 0; i < textTracks.length; i++) {
-        textTracks[i].mode = textTracks[i].language === language ? "showing" : "hidden";
+      for (const element of textTracks) {
+        element.mode = element.language === language ? "showing" : "hidden";
       }
     }
     const newSybtitle = _.clone(subtitles);
@@ -358,14 +351,12 @@ const Home = () => {
                       const { movementX, movementY } = event;
                       if (isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) upDownVideoHandle(movementY > 0);
                       if (isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) leftRightVideoHandle(movementX > 0);
-                      
                     }
                     handleAutoHide();
                   }}
                   onClick={() => {
                     handleAutoHide();
                     if (!isMouse) {
-                      
                       if (indexFile === 0) {
                         setStateElm({ playing: !state.playing });
                       } else if (boxTracks) {
@@ -434,7 +425,7 @@ const Home = () => {
                         onMouseDown={handleSeekMouseDown}
                         onChange={handleSeekChange}
                         onMouseUp={handleSeekMouseUp}
-                        onPointerDown={(event) => handleSeekMouseDown(event)}
+                        onPointerDown={() => handleSeekMouseDown()}
                         onPointerUp={(event) => handleSeekMouseUp(event)}
                         type="range"
                         className="v-progressInput"
