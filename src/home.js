@@ -124,7 +124,6 @@ const Home = () => {
     if (playFile) {
       playFile.classList.add("f-active");
     }
-    handleAutoHide();
   }, [indexFile]);
 
   useEffect(() => {
@@ -215,11 +214,12 @@ const Home = () => {
   const handleAutoHide = (event) => {
     setHide(false);
     clearTimeout(currentRef.current);
-    currentRef.current = setTimeout(() => {
+
+    currentRef.current = setTimeout((indexFile) => {
       setHide(true);
       setBoxTracks(false);
-      setIndexFile(0);
-    }, indexFile === 0 ? 3000 : 5000);
+      if (indexFile !== 0) setIndexFile(0);
+    }, 5000);
   };
 
   const getSubtitles = () => {
@@ -246,7 +246,12 @@ const Home = () => {
   const upDownVideoHandle = (action) => {
     if (!boxTracks) {
       let newIndex = action ? 3 : 0;
-      setIndexFile(newIndex);
+      if (indexFile === 0 && !action) {
+        setHide(true);
+        if (indexFile === 3 && action) setIndexFile(0);
+      } else {
+        setIndexFile(newIndex);
+      }
     } else {
       let newIndex = action ? indexSub + 1 : indexSub - 1;
       if (newIndex < 0) newIndex = subtitles.length;
@@ -347,12 +352,12 @@ const Home = () => {
                 <div className="player-wrapper">
                   <div
                     onMouseMove={(event) => {
+                      handleAutoHide();
                       if (!isMouse) {
                         const { movementX, movementY } = event;
                         if (isFullSreen && !movementX && movementY && (movementY > 5 || movementY < -5)) upDownVideoHandle(movementY > 0);
                         if (isFullSreen && movementX && !movementY && (movementX > 5 || movementX < -5)) leftRightVideoHandle(movementX > 0);
                       }
-                      handleAutoHide();
                     }}
                     onClick={() => {
                       handleAutoHide();
