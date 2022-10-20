@@ -69,6 +69,10 @@ const Home = () => {
     history.replace(`/${backRootPath}`);
   };
 
+  useEffect(() => {
+    if (type === "file") onFullSreenEvent();
+  }, []);
+
   useLayoutEffect(() => {
     setSubtitles(null);
     setStateElm({ played: 0, playing: true });
@@ -104,7 +108,7 @@ const Home = () => {
 
   useEffect(() => {
     if (!_.isEmpty(folders)) {
-      document.getElementById("file_0").classList.add("f-active");
+      document.getElementById("file_0")?.classList?.add("f-active");
     }
   }, [folders]);
 
