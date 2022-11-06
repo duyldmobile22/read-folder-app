@@ -8,7 +8,7 @@ import _ from "lodash";
 import Duration from "./Duration";
 import { Link, useHistory } from "react-router-dom";
 
-const Home = () => {
+const Home = (props) => {
   const playerRef = useRef(null);
   const currentRef = useRef(null);
   let history = useHistory();
@@ -20,6 +20,7 @@ const Home = () => {
   let pathName = _.drop(_.clone(fullPathRoot)).join("/");
   let backRootPath = _.dropRight(_.clone(fullPathRoot)).join("/");
   let pathViewFile = fullPathRoot.join("/");
+  const fName = props?.location?.state?.folder
 
   const queryParams = new URLSearchParams(window.location.search);
   const type = queryParams.get("type");
@@ -53,7 +54,7 @@ const Home = () => {
   const [boxTracks, setBoxTracks] = useState(false);
   const [state, setState] = useState(stateInit);
   const [isFullSreen, setIsFullSreen] = useState(false);
-  const [indexFile, setIndexFile] = useState(0);
+  const [indexFile, setIndexFile] = useState(null);
   const [indexSub, setIndexSub] = useState(0);
   const [isMouse, setIsMouse] = useState(false);
 
@@ -66,7 +67,7 @@ const Home = () => {
 
   const onBackButtonEvent = (e) => {
     window.history.pushState(null, null, window.location.pathname);
-    history.replace(`/${backRootPath}`);
+    history.replace(`/${backRootPath}`, { folder: _.last(fullPathRoot) });
   };
 
   useEffect(() => {
@@ -77,7 +78,6 @@ const Home = () => {
     setSubtitles(null);
     setStateElm({ played: 0, playing: true });
     setBoxTracks(false);
-    if (!isFullSreen) setIndexFile(0);
     if (type !== "file") {
       fetch(publicURL + fullPathRoot.join("/"))
         .then((response) => response.json())
@@ -108,7 +108,7 @@ const Home = () => {
 
   useEffect(() => {
     if (!_.isEmpty(folders)) {
-      document.getElementById("file_0")?.classList?.add("f-active");
+      setIndexFile(fName ? _.findIndex(folders, (f) => f.name === fName) : 0)
     }
   }, [folders]);
 
@@ -128,7 +128,7 @@ const Home = () => {
     if (playFile) {
       playFile.classList.add("f-active");
     }
-  }, [indexFile]);
+  }, [indexFile, state]);
 
   useEffect(() => {
     const files = document.getElementsByClassName("s-active");
@@ -157,7 +157,7 @@ const Home = () => {
   };
 
   const handleActionFile = (fileName, path) => {
-    if (fileName) history.push(`/${[path, fileName].join("/")}?type=file`);
+    if (fileName) history.replace(`/${[path, fileName].join("/")}?type=file`);
   };
 
   const sizeBar = {
@@ -174,7 +174,7 @@ const Home = () => {
 
   const onFullSreenEvent = (e) => {
     if (!document.fullscreenElement) {
-      history.push(`/${backRootPath}`);
+      history.replace(`/${backRootPath}`, { folder: _.last(fullPathRoot) });
       setIsFullSreen(false);
     } else {
       setIsFullSreen(true);
@@ -218,12 +218,13 @@ const Home = () => {
   const handleAutoHide = (event) => {
     setHide(false);
     clearTimeout(currentRef.current);
-
-    currentRef.current = setTimeout((indexFile) => {
-      setHide(true);
-      setBoxTracks(false);
-      if (indexFile !== 0) setIndexFile(0);
-    }, 5000);
+    if (indexFile === 0) {
+      currentRef.current = setTimeout((indexFile) => {
+        setHide(true);
+        setBoxTracks(false);
+        if (indexFile !== 0) setIndexFile(0);
+      }, 5000);
+    }
   };
 
   const getSubtitles = () => {
@@ -287,6 +288,7 @@ const Home = () => {
     <>
       <div style={{ position: "fixed" }} onClick={() => setIsMouse(!isMouse)}>
         <button>{isMouse ? "To Remote" : "To Mouse"}</button>
+        {fName} - {indexFile}
       </div>
       <div
         className="App"
@@ -345,7 +347,7 @@ const Home = () => {
               folders.map((folder, index) => {
                 const fullPath = _.filter([root, pathName, folder.name], (elm) => !!elm).join("/");
                 return (
-                  <div className={`App-item`} id={`file_${index}`} key={index}>
+                  <div className={`App-item ${indexFile === index ? 'f-active' : ''}`} id={`file_${index}`} key={index}>
                     <img src={folder.type === "file" ? fileIcon : folderIcon} alt="icon" />
                     <Link to={`/${fullPath}${folder.type === "file" ? "?type=file" : ""}`}>{folder.name}</Link>
                   </div>
